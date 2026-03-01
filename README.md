@@ -1,91 +1,120 @@
-Instant Messaging Application to share messages using Image Steganography
----------------------------------------------------------------------------
-This project is developed in visual Studio Code
+🔐 Secure Chat with Image Steganography
 
-### STEPS to run the Project
-1. Install node.js , Visual Studio Code
-2. Check that node.js is added to environment variable if not add it 
-    >> (while installing if prompted - check the box to add to path) else search for edit the system environment variables > go to environment variables and add it. it should be something like this 'C:\ProgramFiles\node.js'
-3. Open the project folder "Secure Chat" in Visual Studio Code
-4. Now install an extension "Angular Essentials (version 17)"
-5. now Open the terminal 
-menu > Terminal > New Terminal
-Terminal opens below the code. 
-now change the terminal use dropdown after the '+' icon in the bottom to get "Command Prompt" (only use Command prompt)
+A secure real-time chat application with AES encryption and Image Steganography, built using Angular and Firebase.
 
-6. In command promt terminal use the below command to install angular CLI
-    >>> npm install -g @angular/cli
-    If the packages are installed successfully go ahead run the project step 7
+This project demonstrates secure communication using:
 
-    (if you are getting an error saying npm is not installed it means node.js is either not installed or not added to path)
+🔒 AES Encryption for text messages
 
-7. To RUN the Project - USE command
-    >>> ng serve
-    # After successful compilation it will Navigate you to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+🖼️ Image Steganography for hidden message sharing
 
-CODE files overview
----------------------
-Main Code
-Secure Chat > src > app 
->>app-page.component.html
->>app-page.component.scss
->>app-page.component.ts
+🔥 Firebase Authentication & Firestore for backend
 
-Chat application code 
-    src > app > components > home-page
-Image Steganography code
-    serc > app > componens > Image-Steganography
+⚡ Real-time messaging
 
-linking different components we have app-routing.module.ts
+🚀 Features
 
-for all other component code 
-    > app > components
-for modules 
-    >app > modules
+User Authentication (Email/Password)
 
+Real-time encrypted chat
 
+AES encrypted message storage
 
-----------------------------------------------------------------------------------------
-## How to run the project - Development server
+Image Steganography (Encode & Decode)
 
-Install angular CLI using the below command in the command promt terminal
+OTP-based image decoding
 
-## npm install -g @angular/cli
+Responsive UI
 
-## Run `ng serve` for a dev server. 
+Angular-based frontend
 
+Firebase backend
 
+🛠️ Tech Stack
 
-----------------------------------------------------------------------------------------
-### Other Essentials:
+Angular
 
-# AngularChatApp with Image Steganography
+Firebase Authentication
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 13.3.2.
+Cloud Firestore
 
-# Code scaffolding
+CryptoJS (AES Encryption)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+HTML5 Canvas (Steganography)
 
-# Build
+TypeScript
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+SCSS
 
-# Running unit tests
+📦 Project Structure
+src/
+ ├── app/
+ │   ├── components/
+ │   │   ├── home-page/
+ │   │   ├── login-page/
+ │   │   ├── sign-up-page/
+ │   │   ├── profile-page/
+ │   │   ├── Image-Steganography/
+ │   ├── services/
+ │   ├── models/
+ │   ├── pipes/
+ ├── environments/
+⚙️ Installation & Setup
+1️⃣ Install Requirements
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Node.js
 
-# Running end-to-end tests
+Angular CLI
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Install Angular CLI:
 
-# Further help
+npm install -g @angular/cli
+2️⃣ Clone Repository
+git clone https://github.com/kishaunjith-S/secure-chat-steganography.git
+cd secure-chat-steganography
+3️⃣ Install Dependencies
+npm install
+4️⃣ Configure Firebase
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+Create a Firebase project
 
+Enable:
 
-## developer help ##
+Authentication (Email/Password)
 
-Feel free to contact *Prudhvinath Reddy* for any queries.
-Github: https://github.com/prudhvinathreddy
+Firestore Database
 
+Add your Firebase config inside:
+
+src/environments/environment.ts
+5️⃣ Run the Application
+ng serve
+
+Open browser:
+
+http://localhost:4200/
+🔐 How Security Works
+AES Chat Encryption
+
+Messages are encrypted using CryptoJS AES before storing in Firestore.
+
+Encrypted → Stored → Decrypted on retrieval
+Image Steganography
+
+Secret message + OTP is embedded inside image pixels
+
+OTP required for decoding
+
+Uses Least Significant Bit (LSB) technique
+
+📚 Educational Purpose
+
+This project is developed for learning and demonstration of:
+
+Secure Communication
+
+Cryptography Concepts
+
+Steganography
+
+Real-time Web Applications
