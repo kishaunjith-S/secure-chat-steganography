@@ -1,52 +1,35 @@
-🔐 Secure Chat with Image Steganography
+# 🔐 Secure Chat with Image Steganography
 
-A secure real-time chat application with AES encryption and Image Steganography, built using Angular and Firebase.
+A secure real-time chat application with **AES encryption** and **Image Steganography**, built using **Angular** and **Firebase**.
 
-This project demonstrates secure communication using:
+---
 
-🔒 AES Encryption for text messages
+## 🚀 Features
 
-🖼️ Image Steganography for hidden message sharing
+- User Authentication (Email/Password)
+- Real-time encrypted chat
+- AES encrypted message storage
+- Image Steganography (Encode & Decode)
+- OTP-based image decoding
+- Responsive UI
 
-🔥 Firebase Authentication & Firestore for backend
+---
 
-⚡ Real-time messaging
+## 🛠️ Tech Stack
 
-🚀 Features
+- Angular
+- Firebase Authentication
+- Cloud Firestore
+- CryptoJS (AES Encryption)
+- HTML5 Canvas (Steganography)
+- TypeScript
+- SCSS
 
-User Authentication (Email/Password)
+---
 
-Real-time encrypted chat
+## 📁 Project Structure
 
-AES encrypted message storage
-
-Image Steganography (Encode & Decode)
-
-OTP-based image decoding
-
-Responsive UI
-
-Angular-based frontend
-
-Firebase backend
-
-🛠️ Tech Stack
-
-Angular
-
-Firebase Authentication
-
-Cloud Firestore
-
-CryptoJS (AES Encryption)
-
-HTML5 Canvas (Steganography)
-
-TypeScript
-
-SCSS
-
-📦 Project Structure
+```
 src/
  ├── app/
  │   ├── components/
@@ -59,62 +42,79 @@ src/
  │   ├── models/
  │   ├── pipes/
  ├── environments/
-⚙️ Installation & Setup
-1️⃣ Install Requirements
+```
 
-Node.js
+---
 
-Angular CLI
+## ⚙️ Installation & Setup
+
+### 1️⃣ Install Requirements
+
+- Node.js
+- Angular CLI
 
 Install Angular CLI:
 
+```bash
 npm install -g @angular/cli
-2️⃣ Clone Repository
+```
+
+---
+
+### 2️⃣ Clone Repository
+
+```bash
 git clone https://github.com/kishaunjith-S/secure-chat-steganography.git
 cd secure-chat-steganography
-3️⃣ Install Dependencies
+```
+
+---
+
+### 3️⃣ Install Dependencies
+
+```bash
 npm install
-4️⃣ Configure Firebase
+```
 
-Create a Firebase project
+---
 
-Enable:
+### 4️⃣ Configure Firebase
 
-Authentication (Email/Password)
+1. Create a Firebase project
+2. Enable:
+   - Authentication (Email/Password)
+   - Firestore Database
+3. Add your Firebase config inside:
 
-Firestore Database
-
-Add your Firebase config inside:
-
+```
 src/environments/environment.ts
-5️⃣ Run the Application
+```
+
+---
+
+### 5️⃣ Run the Application
+
+```bash
 ng serve
+```
 
 Open browser:
 
+```
 http://localhost:4200/
-🔐 How Security Works
-AES Chat Encryption
+```
 
-Messages are encrypted using CryptoJS AES before storing in Firestore.
+---
 
-Encrypted → Stored → Decrypted on retrieval
-Image Steganography
+## 🔐 Security Overview
 
-Secret message + OTP is embedded inside image pixels
+### AES Encryption
 
-OTP required for decoding
+Messages are encrypted before storing in Firestore and decrypted on retrieval.
 
-Uses Least Significant Bit (LSB) technique
+### Image Steganography
 
-📚 Educational Purpose
-
-This project is developed for learning and demonstration of:
-
-Secure Communication
-
-Cryptography Concepts
-
-Steganography
-
-Real-time Web Applications
+- Secret message + OTP embedded inside image pixels
+- OTP required for decoding
+- Uses Least Significant Bit (LSB) technique
+>>>>>>> a3edfad (Updated Readme)
