@@ -3,43 +3,81 @@
   <h3>A secret way of sharing messages</h3>
 
   <div class="tabs">
-    <button class="tablinks" (click)="openTab('encode')">Encode</button>
-    <button class="tablinks" (click)="openTab('decode')">Decode</button>
+    <button class="tablinks" [class.active]="activeTab === 'encode'" (click)="openTab('encode')">
+      Encode
+    </button>
+
+    <button class="tablinks" [class.active]="activeTab === 'decode'" (click)="openTab('decode')">
+      Decode
+    </button>
   </div>
 
-  <div *ngIf="activeTab === 'encode'">
-    <h2>Encode</h2>
-    <input type="file" id="encodeImageInput" (change)="onEncodeImageSelected($event)" accept="image/*"><br>
+  <!-- ================= ENCODE ================= -->
 
-    <textarea [(ngModel)]="encodeText" placeholder="Enter text to encode"></textarea><br>
-    
+  <div *ngIf="activeTab === 'encode'" class="tab-section">
+    <h2>Encode</h2>
+
+    <div class="file-upload">
+      <input type="file" id="encodeImageInput" (change)="onEncodeImageSelected($event)" accept="image/*" hidden />
+      <label for="encodeImageInput" class="file-label">
+        Choose Image
+      </label>
+
+      <span class="file-name" *ngIf="selectedEncodeFileName">
+        {{ selectedEncodeFileName }}
+      </span>
+    </div>
+
+    <textarea [(ngModel)]="encodeText" placeholder="Enter text to encode"></textarea>
+
     <div class="button-group">
       <button (click)="encode()">Encode</button>
-      <button (click)="reset('encode')">Reset</button>
+      <button class="secondary" (click)="reset('encode')">
+        Reset
+      </button>
     </div>
 
     <div class="otp-section" *ngIf="otp">
       <div class="otp-highlight">
-        <p>OTP: {{ otp }}</p>
-        <button class="copy-button" (click)="copyToClipboard()">Copy OTP</button>
+        <span class="otp-text">OTP: {{ otp }}</span>
+        <button class="copy-button" (click)="copyToClipboard()">
+          Copy OTP
+        </button>
       </div>
     </div>
-    
+
     <div *ngIf="encodeSuccess" class="success-message">
-      <p>Your message is secure - Share the Image - Use OTP to decrypt.</p>
+      Your message is secure. Share the image and OTP to decrypt.
     </div>
   </div>
 
-  <div *ngIf="activeTab === 'decode'">
+  <!-- ================= DECODE ================= -->
+
+  <div *ngIf="activeTab === 'decode'" class="tab-section">
     <h2>Decode</h2>
-    <input type="file" id="decodeInput" (change)="onDecodeImageSelected($event)" accept="image/*"><br>
+
+    <div class="file-upload">
+      <input type="file" id="decodeInput" (change)="onDecodeImageSelected($event)" accept="image/*" hidden />
+      <label for="decodeInput" class="file-label">
+        Choose Image
+      </label>
+
+      <span class="file-name" *ngIf="selectedDecodeFileName">
+        {{ selectedDecodeFileName }}
+      </span>
+    </div>
+
     <div class="button-group">
       <button (click)="decode()">Decode</button>
-      <button (click)="reset('decode')">Reset</button>
+      <button class="secondary" (click)="reset('decode')">
+        Reset
+      </button>
     </div>
+
     <div *ngIf="decodeSuccess" class="success-message">
-      <p>Decoding successful.</p>
+      Decoding successful.
     </div>
+
     <div *ngIf="decodedText" class="result">
       <h3>Decoded Text:</h3>
       <p>{{ decodedText }}</p>

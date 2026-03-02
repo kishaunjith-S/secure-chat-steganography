@@ -1,16 +1,26 @@
+:host {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+
 mat-toolbar {
   justify-content: space-between;
-  color:white;
-  background-color:black !important;
-  
+  color: white;
+  background-color: black !important;
+
 }
-h1{
-  color:white;
+
+h1 {
+  color: white;
 }
+
 .profile-image-toolbar {
   border-radius: 100%;
   margin-right: 9px;
 }
+
 .content {
   background-image: url("../assets/images/ksu.jpg");
   background-size: cover;

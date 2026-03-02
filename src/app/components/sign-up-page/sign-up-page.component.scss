@@ -1,0 +1,46 @@
+/* Sign Up Page Styling */
+
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 90vh;
+}
+
+/* Glass Sign-Up Card */
+.form-container {
+    background: rgba(20, 25, 55, 0.65);
+    backdrop-filter: blur(18px);
+    border-radius: 22px;
+    padding: 50px;
+    box-shadow:
+        0 0 35px rgba(127, 0, 255, 0.35),
+        0 0 70px rgba(0, 200, 255, 0.2);
+    transition: 0.3s ease;
+}
+
+.form-container:hover {
+    transform: translateY(-5px);
+}
+
+/* Title */
+h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+/* Login Link */
+.login-link {
+    font-size: 1rem;
+    margin-left: 6px;
+    color: #00c6ff;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.login-link:hover {
+    color: #7f00ff;
+    text-shadow: 0 0 8px rgba(127, 0, 255, 0.7);
+}
