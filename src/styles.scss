@@ -1,27 +1,131 @@
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 
+body {
+    background: url("/assets/ksu.jpg") no-repeat center center fixed;
+    background-size: cover;
+}
+
+app-root {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+/* Keep original font */
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+    color: #ffffff;
+}
+
+/* Glass Form Container */
 .form-container {
     display: block;
-    max-width: 300px;
-    margin: auto;
+    max-width: 340px;
+    margin: 80px auto;
 
-    background: #eceff1;
+    background: rgba(15, 20, 40, 0.75);
+    backdrop-filter: blur(15px);
     padding: 48px;
-    border-radius: 16px;
+    border-radius: 20px;
+
+    box-shadow:
+        0 0 30px rgba(0, 200, 255, 0.25),
+        0 0 60px rgba(127, 0, 255, 0.15);
+
+    transition: 0.3s ease;
 }
+
+.form-container:hover {
+    transform: translateY(-4px);
+}
+
 .text-center {
     text-align: center;
 }
+
 .center {
     display: flex;
     justify-content: center;
 }
+
 .form-container mat-form-field {
     width: 100%;
 }
+
+/* Improve Angular Material Fill */
+.mat-form-field-appearance-fill .mat-form-field-flex {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border-radius: 8px;
+}
+
+.mat-input-element {
+    color: white !important;
+}
+
+/* Neon Buttons */
+button {
+    background: linear-gradient(45deg, #7f00ff, #00c6ff);
+    border: none;
+    padding: 8px 18px;
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s ease;
+    box-shadow: 0 0 10px rgba(127, 0, 255, 0.6);
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
+}
+
 .margin-top {
     margin-top: 16px;
 }
 
+/* Smooth Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
 
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #00e0ff, #7f00ff);
+    border-radius: 10px;
+}
+
+/* ---------- ANGULAR MATERIAL AUTOCOMPLETE PANEL ---------- */
+
+.cdk-overlay-container {
+    .mat-autocomplete-panel {
+        background: rgba(20, 25, 55, 0.95) !important;
+        backdrop-filter: blur(15px);
+        border-radius: 12px !important;
+        box-shadow:
+            0 0 25px rgba(127, 0, 255, 0.4),
+            0 0 40px rgba(0, 200, 255, 0.2);
+    }
+
+    .mat-option {
+        color: white !important;
+    }
+
+    .mat-option:hover {
+        background: linear-gradient(45deg, #7f00ff, #00c6ff) !important;
+        color: white !important;
+    }
+
+    .mat-option.mat-active {
+        background: linear-gradient(45deg, #7f00ff, #00c6ff) !important;
+        color: white !important;
+    }
+}

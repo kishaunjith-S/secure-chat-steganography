@@ -15,17 +15,30 @@ export class SecretMessageEmbedderComponent {
   encodeSuccess: boolean = false;
   decodeSuccess: boolean = false;
 
+  selectedEncodeFileName: string | null = null;
+  selectedDecodeFileName: string | null = null;
+
   openTab(tabName: 'encode' | 'decode') {
     this.activeTab = tabName;
     this.reset(tabName);
   }
 
   onEncodeImageSelected(event: any) {
-    this.encodeImageFile = event.target.files ? event.target.files[0] : null;
+    const file = event.target.files ? event.target.files[0] : null;
+    this.encodeImageFile = file;
+
+    if (file) {
+      this.selectedEncodeFileName = file.name;
+    }
   }
 
   onDecodeImageSelected(event: any) {
-    this.decodeImageFile = event.target.files ? event.target.files[0] : null;
+    const file = event.target.files ? event.target.files[0] : null;
+    this.decodeImageFile = file;
+
+    if (file) {
+      this.selectedDecodeFileName = file.name;
+    }
   }
 
   encode() {
