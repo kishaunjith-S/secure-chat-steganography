@@ -1,118 +1,150 @@
 <div class="container">
+  <!-- LEFT PANEL -->
   <div class="chat-list mat-elevation-z5">
     <div class="search-input">
       <mat-form-field>
-        <input
-          matInput
-          placeholder="Search for users and start a chat"
-          [matAutocomplete]="users"
-          [formControl]="searchMessage"
-        />
+        <input matInput placeholder="Search for users and start a chat" [matAutocomplete]="users"
+          [formControl]="searchMessage" />
       </mat-form-field>
+
       <mat-autocomplete #users="matAutocomplete">
-        <mat-option
-          *ngFor="let user of users$ | async"
-          [value]="''"
-          (click)="createChat(user)"
-        >
+        <mat-option *ngFor="let user of users$ | async" (click)="createChat(user)">
           {{ user.displayName }}
         </mat-option>
       </mat-autocomplete>
     </div>
+
     <mat-selection-list [multiple]="false" [formControl]="chatListControl">
       <mat-divider></mat-divider>
+
       <mat-list-option *ngFor="let chat of myChats$ | async" [value]="chat.id">
-        <img
-          matListAvatar
-          [src]="
-            chat.chatPic ? chat.chatPic : 'assets/images/profico.png'
-          "
-          alt="Profile_pic"
-        />
+        <img matListAvatar [src]="chat.chatPic ? chat.chatPic : 'assets/images/profico.png'" />
+
         <p mat-line class="chat-title">
-          <span class="chat-name">{{ chat.chatName }}</span
-          ><span class="chat-date">{{
-            chat.lastMessageDate | dateDisplay
-          }}</span>
+          <span class="chat-name">{{ chat.chatName }}</span>
+          <span class="chat-date">
+            {{ chat.lastMessageDate | dateDisplay }}
+          </span>
         </p>
-        <p mat-line>{{ getDecryptedMessage(chat.lastMessage) }}</p>
+
+        <!-- LAST MESSAGE PREVIEW -->
+        <p mat-line>
+          {{
+          getDecryptedMessage(chat.lastMessage)
+          .replace('[img:', '')
+          .replace(']', '')
+          .slice(0, 30)
+          }}
+        </p>
+
         <mat-divider></mat-divider>
       </mat-list-option>
     </mat-selection-list>
   </div>
+
+  <!-- RIGHT PANEL -->
   <div class="messages mat-elevation-z5">
-    <div
-      class="messages-header"
-      *ngIf="selectedChat$ | async as selectedChat; else noChatSelected"
-    >
-      <img
-        [src]="
+
+    <!-- HEADER -->
+    <div class="messages-header" *ngIf="selectedChat$ | async as selectedChat; else noChatSelected">
+      <img [src]="
           selectedChat.chatPic
             ? selectedChat.chatPic
             : 'assets/images/profico.png'
-        "
-      />
+        " />
+
       <h2>{{ selectedChat.chatName }}</h2>
+
       <div class="search-chat">
         <mat-form-field>
-        <input
-          matInput
-          placeholder="Search a chat message"
-          message.chat
-          [formControl]="searchControl"
-        />
-      </mat-form-field>
+          <input matInput placeholder="Search a chat message" [formControl]="searchControl" />
+        </mat-form-field>
       </div>
-      
     </div>
+
     <ng-template #noChatSelected>
       <h2>Messages</h2>
     </ng-template>
-    <mat-divider></mat-divider>    
+
+    <mat-divider></mat-divider>
+
+    <!-- CHAT AREA -->
     <div class="chat-area">
       <ng-container *ngIf="user$ | async as currentUser">
         <ng-container *ngIf="messages$ | async as messages">
-          <div
-            class="chat-bubble-container"
-            [ngClass]="{ sender: message.senderId === currentUser.uid }"
-            *ngFor="let message of messages"
-            
-          >
-          
+
+          <div class="chat-bubble-container" *ngFor="let message of messages"
+            [ngClass]="{ sender: message.senderId === currentUser.uid }">
+
             <div class="chat-bubble">
-              {{ getDecryptedMessage(message.text) }}
-              <span class="chat-time">{{
-                message.sentDate | dateDisplay
-              }}</span>
+
+              <!-- TEXT -->
+              <div *ngIf="getDecryptedMessage(message.text).split('[img:')[0]">
+                {{
+                getDecryptedMessage(message.text).split('[img:')[0]
+                }}
+              </div>
+
+              <!-- IMAGE -->
+              <img *ngIf="getDecryptedMessage(message.text).includes('[img:')" [src]="
+                  getDecryptedMessage(message.text)
+                    .split('[img:')[1]
+                    .replace(']', '')
+                " class="chat-image" />
+
+              <button *ngIf="getDecryptedMessage(message.text).includes('[img:')" class="download-btn" (click)="openImage(
+  getDecryptedMessage(message.text)
+    .split('[img:')[1]
+    .replace(']', '')
+)">
+                🔍 View Image
+              </button>
+
+              <!-- TIME -->
+              <span class="chat-time">
+                {{ message.sentDate | dateDisplay }}
+              </span>
+
             </div>
           </div>
+
         </ng-container>
       </ng-container>
+
       <div #endOfChat></div>
     </div>
-    
+
+    <!-- INPUT AREA -->
     <div class="input-area">
-      <!--<div class="photo">
-        <input #inputField type="file" />
+
+      <!-- FILE -->
+      <div class="file-upload">
+        <input type="file" id="fileInput" (change)="onFileSelected($event)" hidden />
+
+        <label for="fileInput" class="file-btn">
+          📎 Attach Image
+        </label>
+
+        <span class="file-name" *ngIf="selectedFile">
+          {{ selectedFile.name }}
+        </span>
       </div>
-      <div class="photo">
-        <input #inputField type="file" (change)="onFileSelected($event)" style="display: none;" />
-        <button mat-icon-button (click)="inputField.click()">
-          <mat-icon>attach_file</mat-icon>
-        </button>
-      </div>-->
+
+      <!-- MESSAGE -->
       <mat-form-field appearance="outline">
-        <input
-          matInput
-          placeholder="Enter your message..."
-          [formControl]="messageControl"
-          (keydown.enter)="sendMessage()"
-        />
+        <input matInput placeholder="Enter your message..." [formControl]="messageControl"
+          (keydown.enter)="sendMessage()" />
+
         <button mat-icon-button matSuffix (click)="sendMessage()">
           <mat-icon>send</mat-icon>
         </button>
       </mat-form-field>
-      <a routerLink="/is" target="_blank" class="IsButton" title="Want to Send a secret message? Try this">Hide your text</a>
+
+      <!-- STEGO -->
+      <a routerLink="/is" target="_blank" class="IsButton">
+        Hide your text
+      </a>
+
     </div>
   </div>
 </div>

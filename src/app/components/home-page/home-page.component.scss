@@ -131,10 +131,11 @@
     .chat-bubble {
         background: rgba(255, 255, 255, 0.08);
         padding: 10px 15px;
-        border-radius: 15px;
-        max-width: 70%;
+        border-radius: 10px;
+        max-width: 100%;
         position: relative;
         color: white;
+        word-wrap: break-word;
 
         .chat-time {
             font-size: 0.7rem;
@@ -243,4 +244,67 @@
 
 ::ng-deep .mat-option:hover {
     background: linear-gradient(45deg, #7f00ff, #00c6ff) !important;
+}
+
+.chat-image {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin-top: 8px;
+    object-fit: contain;
+}
+
+.download-btn {
+    margin-top: 6px;
+    background: linear-gradient(45deg, #7b2ff7, #00c6ff);
+    border: none;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: block;
+}
+
+.download-btn:hover {
+    opacity: 0.8;
+}
+
+/* =========================
+   FILE UPLOAD (CUSTOM)
+========================= */
+
+.file-upload {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Button */
+.file-btn {
+    background: linear-gradient(45deg, #7f00ff, #00c6ff);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: 0.3s ease;
+}
+
+.file-btn:hover {
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+/* File name */
+.file-name {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    color: #ccc;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

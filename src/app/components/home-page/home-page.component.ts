@@ -15,7 +15,8 @@ import { ChatsService } from 'src/app/services/chats.service';
 import { UsersService } from 'src/app/services/users.service';
 import * as CryptoJS from 'crypto-js';
 
-
+// 🔥 Firebase Storage
+import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
 
 @Component({
   selector: 'app-home',
@@ -23,36 +24,21 @@ import * as CryptoJS from 'crypto-js';
   styleUrls: ['./home-page.component.scss'],
 })
 export class HomeComponent implements OnInit {
-/*uploadFile() {
-throw new Error('Method not implemented.');
-}
-onFileSelected($event: Event) {
-throw new Error('Method not implemented.');
-}*/
-  @ViewChild('endOfChat')
-  endOfChat!: ElementRef;
+
+  @ViewChild('endOfChat') endOfChat!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef; // 🔥 for clearing file input
 
   user$ = this.usersService.currentUserProfile$;
   myChats$ = this.chatsService.myChats$;
 
-  searchMessage = new FormControl('');								  
+  searchMessage = new FormControl('');
   searchControl = new FormControl('');
   messageControl = new FormControl('');
   chatListControl = new FormControl('');
 
   messages$: Observable<Message[]> | undefined;
+
   selectedFile: File | null = null;
-  
-					
-															
-							   
-																		
-				 
-							  
-		
-	  
-   
-   
 
   otherUsers$ = combineLatest([this.usersService.allUsers$, this.user$]).pipe(
     map(([users, user]) => users.filter((u) => u.uid !== user?.uid))
@@ -62,11 +48,11 @@ throw new Error('Method not implemented.');
     this.otherUsers$,
     this.searchControl.valueChanges.pipe(startWith('')),
   ]).pipe(
-    map(([users, searchString]) => {
-      return users.filter((u) =>
+    map(([users, searchString]) =>
+      users.filter((u) =>
         u.displayName?.toLowerCase().includes(searchString.toLowerCase())
-      );
-    })
+      )
+    )
   );
 
   selectedChat$ = combineLatest([
@@ -77,101 +63,123 @@ throw new Error('Method not implemented.');
   constructor(
     private usersService: UsersService,
     private chatsService: ChatsService,
-  ) {}
+    private storage: Storage // 🔥 Firebase Storage
+  ) { }
 
   ngOnInit(): void {
     this.messages$ = this.chatListControl.valueChanges.pipe(
       map((value) => value[0]),
       switchMap((chatId) => this.chatsService.getChatMessages$(chatId)),
-      tap(() => {
-        this.scrollToBottom();
-      })
+      tap(() => this.scrollToBottom())
     );
-	console.log(this.messages$);
-							
   }
 
+  // 🔥 FILE SELECT
   onFileSelected(event: any) {
     this.selectedFile = event.target.files[0];
   }
-
-
-
 
   createChat(user: ProfileUser) {
     this.chatsService
       .isExistingChat(user.uid)
       .pipe(
-        switchMap((chatId) => {
-          if (!chatId) {
-            return this.chatsService.createChat(user);
-          } else {
-            return of(chatId);
-          }
-        })
+        switchMap((chatId) =>
+          chatId ? of(chatId) : this.chatsService.createChat(user)
+        )
       )
       .subscribe((chatId) => {
         this.chatListControl.setValue([chatId]);
       });
   }
 
-														 
-		getDecryptedMessage(encryptedMessage: string): string {
-		if (encryptedMessage) {
-      console.log("encrypted: " + encryptedMessage);
-      console.log("decrypted: " + CryptoJS.AES.decrypt(encryptedMessage, 'my-secret-key').toString(CryptoJS.enc.Utf8))
-      return CryptoJS.AES.decrypt(encryptedMessage, 'my-secret-key').toString(CryptoJS.enc.Utf8);
-    } else {
-      return "";
-    }
-    
-	}										  
-																													
-																							   
-  /*sendMessage() {
-    const message = this.messageControl.value;
-    const selectedChatId = this.chatListControl.value[0];
-    if (message && selectedChatId) {
-	  const encryptedMessage = CryptoJS.AES.encrypt(message, 'my-secret-key').toString();
-      const decryptedMessage = CryptoJS.AES.decrypt(encryptedMessage, 'my-secret-key').toString(CryptoJS.enc.Utf8);
-      console.log(`Encrypted message: ${encryptedMessage}`);
-      console.log(`Decrypted message: ${decryptedMessage}`);																				 
-																												   
-															
-															
-      this.chatsService
-        .addChatMessage(selectedChatId, encryptedMessage)
-        .subscribe(() => {
-          this.scrollToBottom();
-        });
-      this.messageControl.setValue('');
-    }
-  }*/
+  // 🔐 DECRYPT MESSAGE
+  getDecryptedMessage(encryptedMessage: string): string {
+    if (!encryptedMessage) return '';
+    return CryptoJS.AES.decrypt(encryptedMessage, 'my-secret-key')
+      .toString(CryptoJS.enc.Utf8);
+  }
 
-  sendMessage(filePath?: string) {
+  // 🚀 SEND MESSAGE (TEXT + IMAGE)
+  async sendMessage() {
     const message = this.messageControl.value;
     const selectedChatId = this.chatListControl.value[0];
-    if (message && selectedChatId) {
-      let messageToSend = message;
-      if (filePath) {
-        messageToSend += ` File: ${filePath}`;
+
+    if (!selectedChatId) return;
+
+    let finalMessage = message || '';
+
+    // 🔥 Upload image if selected
+    if (this.selectedFile) {
+      try {
+        const filePath = `chat-images/${Date.now()}_${this.selectedFile.name}`;
+        const storageRef = ref(this.storage, filePath);
+
+        await uploadBytes(storageRef, this.selectedFile);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        finalMessage += ` [img:${downloadURL}]`;
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert('Image upload failed');
+        return;
       }
-      const encryptedMessage = CryptoJS.AES.encrypt(messageToSend, 'my-secret-key').toString();
-      this.chatsService
-        .addChatMessage(selectedChatId, encryptedMessage)
-        .subscribe(() => {
-          this.scrollToBottom();
-        });
-      this.messageControl.setValue('');
-      this.selectedFile = null;
+    }
+
+
+    if (!finalMessage.trim()) return;
+
+    // 🔐 Encrypt
+    const encryptedMessage = CryptoJS.AES.encrypt(
+      finalMessage,
+      'my-secret-key'
+    ).toString();
+
+    // 📤 Send
+    this.chatsService
+      .addChatMessage(selectedChatId, encryptedMessage)
+      .subscribe(() => {
+        this.scrollToBottom();
+      });
+
+    // 🧹 Reset
+    this.messageControl.setValue('');
+    this.selectedFile = null;
+
+    // 🔥 clear file input UI
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
     }
   }
 
   scrollToBottom() {
     setTimeout(() => {
       if (this.endOfChat) {
-        this.endOfChat.nativeElement.scrollIntoView({ behavior: 'smooth' });
+        this.endOfChat.nativeElement.scrollIntoView({
+          behavior: 'smooth',
+        });
       }
     }, 100);
+  }
+  downloadImage(url: string) {
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = 'chat-image.png'; // you can customize name
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        console.error('Download failed:', err);
+      });
+  }
+  openImage(url: string) {
+    window.open(url, '_blank');
   }
 }
