@@ -5,14 +5,13 @@ import {
   collectionData,
   doc,
   Firestore,
-  getDoc,
   orderBy,
   query,
   Timestamp,
   updateDoc,
   where,
 } from '@angular/fire/firestore';
-import { concatMap, from, map, Observable, take, tap } from 'rxjs';
+import { concatMap, map, Observable, take } from 'rxjs';
 import { Chat, Message } from '../models/chat';
 import { ProfileUser } from '../models/user-profile';
 import { UsersService } from './users.service';
@@ -30,10 +29,7 @@ export class ChatsService {
     const ref = collection(this.firestore, 'chats');
     return this.usersService.currentUserProfile$.pipe(
       concatMap((user) => {
-        const myQuery = query(
-          ref,
-          where('userIds', 'array-contains', user?.uid)
-        );
+        const myQuery = query(ref, where('userIds', 'array-contains', user?.uid));
         return collectionData(myQuery, { idField: 'id' }).pipe(
           map((chats: any) => this.addChatNameAndPic(user?.uid, chats))
         ) as Observable<Chat[]>;
@@ -49,14 +45,8 @@ export class ChatsService {
         addDoc(ref, {
           userIds: [user?.uid, otherUser?.uid],
           users: [
-            {
-              displayName: user?.displayName ?? '',
-              photoURL: user?.photoURL ?? '',
-            },
-            {
-              displayName: otherUser.displayName ?? '',
-              photoURL: otherUser.photoURL ?? '',
-            },
+            { displayName: user?.displayName ?? '', photoURL: user?.photoURL ?? '' },
+            { displayName: otherUser.displayName ?? '', photoURL: otherUser.photoURL ?? '' },
           ],
         })
       ),
@@ -67,29 +57,25 @@ export class ChatsService {
   isExistingChat(otherUserId: string): Observable<string | null> {
     return this.myChats$.pipe(
       take(1),
-      map((chats) => {
-        for (let i = 0; i < chats.length; i++) {
-          if (chats[i].userIds.includes(otherUserId)) {
-            return chats[i].id;
-          }
-        }
-
-        return null;
-      })
+      map((chats) => chats.find(c => c.userIds.includes(otherUserId))?.id ?? null)
     );
   }
 
-  addChatMessage(chatId: string, message: string): Observable<any> {
-    const ref = collection(this.firestore, 'chats', chatId, 'messages');
+  // UPDATED: now also accepts coverUrl so we can store it alongside
+  // the stego URL for the metrics dashboard to use.
+  addChatMessage(chatId: string, message: string, coverUrl: string = ''): Observable<any> {
+    const ref     = collection(this.firestore, 'chats', chatId, 'messages');
     const chatRef = doc(this.firestore, 'chats', chatId);
-    const today = Timestamp.fromDate(new Date());
+    const today   = Timestamp.fromDate(new Date());
+
     return this.usersService.currentUserProfile$.pipe(
       take(1),
       concatMap((user) =>
         addDoc(ref, {
-          text: message,
-          senderId: user?.uid,
-          sentDate: today,
+          text:      message,   // stego image URL
+          coverUrl:  coverUrl,  // cover image URL — used only by metrics dashboard
+          senderId:  user?.uid,
+          sentDate:  today,
         })
       ),
       concatMap(() =>
@@ -99,20 +85,31 @@ export class ChatsService {
   }
 
   getChatMessages$(chatId: string): Observable<Message[]> {
-    const ref = collection(this.firestore, 'chats', chatId, 'messages');
+    const ref      = collection(this.firestore, 'chats', chatId, 'messages');
     const queryAll = query(ref, orderBy('sentDate', 'asc'));
     return collectionData(queryAll) as Observable<Message[]>;
   }
 
+  // Get ALL messages across ALL chats — used by metrics dashboard
+  getAllMessages$(): Observable<Message[]> {
+    return this.myChats$.pipe(
+      concatMap((chats) => {
+        // Collect messages from the most recent chat only for simplicity
+        // (Firestore doesn't support collection-group queries without an index)
+        if (chats.length === 0) return [];
+        const latestChatId = chats[0].id;
+        return this.getChatMessages$(latestChatId);
+      })
+    );
+  }
+
   addChatNameAndPic(currentUserId: string | undefined, chats: Chat[]): Chat[] {
     chats.forEach((chat: Chat) => {
-      const otherUserIndex =
-        chat.userIds.indexOf(currentUserId ?? '') === 0 ? 1 : 0;
+      const otherUserIndex = chat.userIds.indexOf(currentUserId ?? '') === 0 ? 1 : 0;
       const { displayName, photoURL } = chat.users[otherUserIndex];
       chat.chatName = displayName;
-      chat.chatPic = photoURL;
+      chat.chatPic  = photoURL;
     });
-
     return chats;
   }
 }

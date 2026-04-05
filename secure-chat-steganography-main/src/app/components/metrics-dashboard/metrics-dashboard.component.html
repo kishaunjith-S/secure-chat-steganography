@@ -1,0 +1,136 @@
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <mat-icon class="header-icon">analytics</mat-icon>
+    <div>
+      <h1>Steganography Metrics Dashboard</h1>
+      <p>Automatically computed from the last 10 sent messages. Refresh the page to update.</p>
+    </div>
+  </div>
+
+  <!-- Global loading -->
+  <div class="loading-state" *ngIf="isLoading">
+    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+    <p>Loading messages from Firebase...</p>
+  </div>
+
+  <!-- Global error -->
+  <div class="error-state" *ngIf="!isLoading && globalError">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ globalError }}</p>
+  </div>
+
+  <!-- Message cards -->
+  <div class="messages-list" *ngIf="!isLoading && !globalError">
+
+    <div class="message-card mat-elevation-z3"
+         *ngFor="let m of messages; let i = index">
+
+      <!-- Card header -->
+      <div class="card-header">
+        <span class="msg-index">Message #{{ i + 1 }}</span>
+        <span class="msg-date">{{ formatDate(m.sentDate) }}</span>
+        <div class="score-badge" *ngIf="!m.loading && !m.error"
+             [style.background]="getScoreColor(m.strengthScore)">
+          {{ m.strengthScore }}/100 — {{ m.strengthLabel }}
+        </div>
+      </div>
+
+      <!-- Image previews -->
+      <div class="image-row" *ngIf="!m.loading && !m.error">
+        <div class="img-box">
+          <p class="img-label">Cover Image (GAN generated)</p>
+          <img [src]="m.coverUrl" crossorigin="anonymous" alt="cover" />
+        </div>
+        <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+        <div class="img-box">
+          <p class="img-label">Stego Image (message hidden inside)</p>
+          <img [src]="m.stegoUrl" crossorigin="anonymous" alt="stego" />
+        </div>
+      </div>
+
+      <!-- Loading spinner per card -->
+      <div class="card-loading" *ngIf="m.loading">
+        <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+        <span>Computing metrics...</span>
+      </div>
+
+      <!-- Per-card error -->
+      <div class="card-error" *ngIf="m.error">{{ m.error }}</div>
+
+      <!-- Metrics grid -->
+      <div class="metrics-grid" *ngIf="!m.loading && !m.error">
+
+        <div class="metric-item highlight">
+          <span class="metric-label">PSNR</span>
+          <span class="metric-value" [style.color]="getPsnrColor(m.psnr)">
+            {{ formatPsnr(m.psnr) }}
+          </span>
+          <span class="metric-hint">> 40 dB = imperceptible</span>
+        </div>
+
+        <div class="metric-item">
+          <span class="metric-label">MSE</span>
+          <span class="metric-value">{{ m.mse | number:'1.4-4' }}</span>
+          <span class="metric-hint">Lower is better</span>
+        </div>
+
+        <div class="metric-item highlight">
+          <span class="metric-label">Payload Size</span>
+          <span class="metric-value">{{ m.payloadBytes | number }} bytes</span>
+          <span class="metric-hint">{{ m.payloadBits | number }} bits embedded</span>
+        </div>
+
+        <div class="metric-item highlight">
+          <span class="metric-label">Capacity Used</span>
+          <span class="metric-value">{{ m.capacityUsedPct | number:'1.2-2' }}%</span>
+          <div class="cap-bar">
+            <div class="cap-fill"
+              [style.width.%]="m.capacityUsedPct"
+              [style.background]="m.capacityUsedPct > 50 ? '#ff9800' : '#4caf50'">
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-item">
+          <span class="metric-label">Image Size</span>
+          <span class="metric-value">{{ m.width }} × {{ m.height }}</span>
+          <span class="metric-hint">{{ m.totalPixels | number }} pixels</span>
+        </div>
+
+        <div class="metric-item">
+          <span class="metric-label">Max Capacity</span>
+          <span class="metric-value">{{ m.capacityBytes | number }} bytes</span>
+          <span class="metric-hint">3 bits per pixel</span>
+        </div>
+
+        <div class="metric-item">
+          <span class="metric-label">Bits Per Pixel</span>
+          <span class="metric-value">{{ m.bitsPerPixel | number:'1.4-4' }}</span>
+          <span class="metric-hint">Safe threshold &lt; 0.1 bpp</span>
+        </div>
+
+        <div class="metric-item highlight">
+          <span class="metric-label">Detection Risk</span>
+          <span class="metric-value" [style.color]="getRiskColor(m.detectionRisk)">
+            {{ m.detectionRisk }}
+          </span>
+          <span class="metric-hint">Based on embedding density</span>
+        </div>
+
+        <div class="metric-item highlight">
+          <span class="metric-label">Chi-Square Steganalysis</span>
+          <span class="metric-value" [style.color]="getChiColor(m.chiSquareResult)">
+            {{ m.chiSquareResult }}
+          </span>
+          <span class="metric-hint">χ² = {{ m.chiSquare }} (critical: 3.841)</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

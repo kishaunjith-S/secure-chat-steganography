@@ -31,6 +31,8 @@ import { SecretMessageEmbedderComponent } from './components/Image-Steganography
 import { EmailVerificationComponent } from './components/MFA/MFA.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'; // NEW
 import { HttpClientModule } from '@angular/common/http';                       // NEW
+import { MetricsDashboardComponent } from './components/metrics-dashboard/metrics-dashboard.component';
+import { MatTabsModule } from '@angular/material/tabs';
 
 @NgModule({
   declarations: [
@@ -43,6 +45,7 @@ import { HttpClientModule } from '@angular/common/http';                       /
     DateDisplayPipe,
     SecretMessageEmbedderComponent,
     EmailVerificationComponent,
+    MetricsDashboardComponent,
   ],
   imports: [
     BrowserModule,
@@ -69,6 +72,7 @@ import { HttpClientModule } from '@angular/common/http';                       /
     MatFormFieldModule,
     MatAutocompleteModule,
     MatDividerModule,
+    MatTabsModule,
   ],
   providers: [DatePipe],
   bootstrap: [AppComponent],

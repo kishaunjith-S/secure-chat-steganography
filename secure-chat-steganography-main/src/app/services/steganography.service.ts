@@ -2,47 +2,42 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
+export interface StegoResult {
+  stegoBase64: string;  // the stego image (embedded)
+  coverBase64: string;  // the original GAN image (before embedding)
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class SteganographyService {
-  // URL of your Python Flask backend (change port if needed)
   private GAN_API_URL = 'http://localhost:5000/generate-image';
-
-  // Null character used as end-of-message terminator inside the image
-  private TERMINATOR = String.fromCharCode(0);
+  private TERMINATOR  = String.fromCharCode(0);
 
   constructor(private http: HttpClient) {}
 
   // ─────────────────────────────────────────────
   // PUBLIC: Called by home-page when SENDING
-  // Returns a base64 PNG with the message hidden inside
+  // Now returns BOTH the stego image AND the cover
+  // so we can store the cover for metrics later.
   // ─────────────────────────────────────────────
-  async encodeMessageIntoGANImage(encryptedText: string): Promise<string> {
-    // Step 1: Ask Flask backend for a GAN-generated image
+  async encodeMessageIntoGANImage(encryptedText: string): Promise<StegoResult> {
     const response: any = await firstValueFrom(this.http.get(this.GAN_API_URL));
-    const ganImageBase64: string = response.image; // base64 PNG string
-
-    // Step 2: Embed the encrypted text into the image using LSB steganography
-    const stegoBase64 = await this.embedTextInBase64Image(ganImageBase64, encryptedText);
-    return stegoBase64;
+    const coverBase64: string = response.image;
+    const stegoBase64 = await this.embedTextInBase64Image(coverBase64, encryptedText);
+    return { stegoBase64, coverBase64 };
   }
 
   // ─────────────────────────────────────────────
   // PUBLIC: Called by home-page when RECEIVING
-  // Takes a Firebase Storage URL, downloads image, extracts hidden text
   // ─────────────────────────────────────────────
   async decodeMessageFromImageUrl(imageUrl: string): Promise<string> {
-    // Step 1: Download the stego image as base64
     const base64 = await this.urlToBase64(imageUrl);
-
-    // Step 2: Extract the hidden encrypted text from the image
-    const extractedText = await this.extractTextFromBase64Image(base64);
-    return extractedText;
+    return this.extractTextFromBase64Image(base64);
   }
 
   // ─────────────────────────────────────────────
-  // PRIVATE: LSB Encode — hides text in image pixels
+  // PRIVATE: LSB Encode
   // ─────────────────────────────────────────────
   private embedTextInBase64Image(base64Image: string, text: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -50,7 +45,7 @@ export class SteganographyService {
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
+        canvas.width  = img.width;
         canvas.height = img.height;
 
         const ctx = canvas.getContext('2d');
@@ -59,31 +54,26 @@ export class SteganographyService {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        // Convert text + terminator to binary string
-        const fullText = text + this.TERMINATOR;
+        const fullText   = text + this.TERMINATOR;
         const binaryText = this.textToBinary(fullText);
+        const maxBits    = (imageData.data.length / 4) * 3;
 
-        // Capacity check: each pixel holds 3 bits (R, G, B LSBs)
-        const maxBits = (imageData.data.length / 4) * 3;
         if (binaryText.length > maxBits) {
           reject('Message too long for this image');
           return;
         }
 
-        // Write bits into R, G, B LSBs (skip Alpha channel — index i+3)
         let bitIndex = 0;
         for (let i = 0; i < imageData.data.length && bitIndex < binaryText.length; i += 4) {
-          imageData.data[i]     = (imageData.data[i]     & 0xFE) | parseInt(binaryText[bitIndex++] ?? '0');
+          imageData.data[i]     = (imageData.data[i]     & 0xFE) | parseInt(binaryText[bitIndex++]);
           if (bitIndex < binaryText.length)
-            imageData.data[i + 1] = (imageData.data[i + 1] & 0xFE) | parseInt(binaryText[bitIndex++] ?? '0');
+            imageData.data[i+1] = (imageData.data[i+1]   & 0xFE) | parseInt(binaryText[bitIndex++]);
           if (bitIndex < binaryText.length)
-            imageData.data[i + 2] = (imageData.data[i + 2] & 0xFE) | parseInt(binaryText[bitIndex++] ?? '0');
+            imageData.data[i+2] = (imageData.data[i+2]   & 0xFE) | parseInt(binaryText[bitIndex++]);
         }
 
         ctx.putImageData(imageData, 0, 0);
-        // Return as base64 PNG (without the data:image/png;base64, prefix)
-        const fullDataUrl = canvas.toDataURL('image/png');
-        resolve(fullDataUrl.split(',')[1]); // strip the prefix
+        resolve(canvas.toDataURL('image/png').split(',')[1]);
       };
 
       img.onerror = () => reject('Failed to load image for encoding');
@@ -92,7 +82,7 @@ export class SteganographyService {
   }
 
   // ─────────────────────────────────────────────
-  // PRIVATE: LSB Decode — extracts text from image pixels
+  // PRIVATE: LSB Decode
   // ─────────────────────────────────────────────
   private extractTextFromBase64Image(base64Image: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -100,7 +90,7 @@ export class SteganographyService {
 
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
+        canvas.width  = img.width;
         canvas.height = img.height;
 
         const ctx = canvas.getContext('2d');
@@ -109,91 +99,61 @@ export class SteganographyService {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        let bits = '';
+        let bits   = '';
         let result = '';
 
         for (let i = 0; i < imageData.data.length; i += 4) {
-          // Read LSB of R, G, B
-          bits += (imageData.data[i]     & 0x01).toString();
-          bits += (imageData.data[i + 1] & 0x01).toString();
-          bits += (imageData.data[i + 2] & 0x01).toString();
+          bits += (imageData.data[i]   & 0x01).toString();
+          bits += (imageData.data[i+1] & 0x01).toString();
+          bits += (imageData.data[i+2] & 0x01).toString();
 
-          // Process complete bytes
           while (bits.length >= 8) {
-            const byte = bits.substring(0, 8);
+            const charCode = parseInt(bits.substring(0, 8), 2);
             bits = bits.substring(8);
-            const charCode = parseInt(byte, 2);
-
-            if (charCode === 0) {
-              // Terminator found — message is complete
-              resolve(result);
-              return;
-            }
+            if (charCode === 0) { resolve(result); return; }
             result += String.fromCharCode(charCode);
           }
         }
 
-        // If no terminator found, return whatever was extracted
         resolve(result);
       };
 
       img.onerror = () => reject('Failed to load image for decoding');
-
-      // Handle both full data URLs and plain base64
-      if (base64Image.startsWith('data:')) {
-        img.src = base64Image;
-      } else {
-        img.src = 'data:image/png;base64,' + base64Image;
-      }
+      img.src = base64Image.startsWith('data:')
+        ? base64Image
+        : 'data:image/png;base64,' + base64Image;
     });
   }
 
   // ─────────────────────────────────────────────
-  // PRIVATE: Download image from URL → base64
+  // PRIVATE: Firebase Storage URL → base64 PNG
   // ─────────────────────────────────────────────
   private urlToBase64(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous'; // needed for Firebase Storage URLs
-
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
+        canvas.width  = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         if (!ctx) { reject('Canvas not supported'); return; }
         ctx.drawImage(img, 0, 0);
-        const fullDataUrl = canvas.toDataURL('image/png');
-        resolve(fullDataUrl.split(',')[1]); // return only the base64 part
+        resolve(canvas.toDataURL('image/png').split(',')[1]);
       };
-
-      img.onerror = () => reject('Failed to download image from URL: ' + url);
+      img.onerror = () => reject('Failed to download image: ' + url);
       img.src = url;
     });
   }
 
-  // ─────────────────────────────────────────────
-  // PRIVATE: Convert text string → binary string
-  // ─────────────────────────────────────────────
   private textToBinary(text: string): string {
-    return text
-      .split('')
-      .map((char) => char.charCodeAt(0).toString(2).padStart(8, '0'))
-      .join('');
+    return text.split('').map(c => c.charCodeAt(0).toString(2).padStart(8, '0')).join('');
   }
 
-  // ─────────────────────────────────────────────
-  // PUBLIC HELPER: Convert base64 string → File object
-  // Used by image-upload.service to upload to Firebase
-  // ─────────────────────────────────────────────
   base64ToFile(base64: string, filename: string): File {
-    const byteString = atob(base64);
-    const arrayBuffer = new ArrayBuffer(byteString.length);
-    const uint8Array = new Uint8Array(arrayBuffer);
-    for (let i = 0; i < byteString.length; i++) {
-      uint8Array[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([uint8Array], { type: 'image/png' });
-    return new File([blob], filename, { type: 'image/png' });
+    const bytes  = atob(base64);
+    const buffer = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i);
+    return new File([new Blob([buffer], { type: 'image/png' })], filename, { type: 'image/png' });
   }
 }

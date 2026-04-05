@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms'
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './components/login-page/login-page.component';
@@ -12,41 +12,19 @@ import {
 } from '@angular/fire/auth-guard';
 import { ProfileComponent } from './components/profile-page/profile-page.component';
 import { SecretMessageEmbedderComponent } from './components/Image-Steganography/Image-Steganography.component';
+import { MetricsDashboardComponent } from './components/metrics-dashboard/metrics-dashboard.component';
 
 const redirectToLogin = () => redirectUnauthorizedTo(['login']);
-const redirectToHome = () => redirectLoggedInTo(['home']);
+const redirectToHome  = () => redirectLoggedInTo(['home']);
 
 const routes: Routes = [
-  {
-    path: '',
-    pathMatch: 'full',
-    component: LoginComponent,
-  },
-  {
-    path: 'login',
-    component: LoginComponent,
-    ...canActivate(redirectToHome),
-  },
-  {
-    path: 'sign-up',
-    component: SignUpComponent,
-    ...canActivate(redirectToHome),
-  },
-  {
-    path: 'home',
-    component: HomeComponent,
-    ...canActivate(redirectToLogin),
-  },
-  {
-    path: 'profile',
-    component: ProfileComponent,
-    ...canActivate(redirectToLogin),
-  },
-  {
-    path: 'is',
-    component: SecretMessageEmbedderComponent,
-    ...canActivate(redirectToLogin),
-  },
+  { path: '', pathMatch: 'full', component: LoginComponent },
+  { path: 'login',   component: LoginComponent,   ...canActivate(redirectToHome)  },
+  { path: 'sign-up', component: SignUpComponent,  ...canActivate(redirectToHome)  },
+  { path: 'home',    component: HomeComponent,    ...canActivate(redirectToLogin) },
+  { path: 'profile', component: ProfileComponent, ...canActivate(redirectToLogin) },
+  { path: 'is',      component: SecretMessageEmbedderComponent, ...canActivate(redirectToLogin) },
+  { path: 'metrics', component: MetricsDashboardComponent,      ...canActivate(redirectToLogin) },
 ];
 
 @NgModule({
