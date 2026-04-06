@@ -1,0 +1,10 @@
+=================================================================
+StegaShield Evaluation Report — LaTeX-ready output
+=================================================================
+
+=== OVERALL STATISTICS ===
+Total messages evaluated : 20
+PSNR  mean ± std         : 79.21 ± 4.06 dB
+PSNR  min / max          : 73.50 / 84.94 dB
+MSE   mean ± std         : 0.001167 ± 0.000980
+bpp   mean ± std         : 0.006921 ± 0.005912

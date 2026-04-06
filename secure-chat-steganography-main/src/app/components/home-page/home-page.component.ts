@@ -15,9 +15,13 @@ import { ChatsService } from 'src/app/services/chats.service';
 import { UsersService } from 'src/app/services/users.service';
 import { SteganographyService, StegoResult } from 'src/app/services/steganography.service';
 import { ImageUploadService } from 'src/app/services/image-upload.service';
+import { EcdhService } from 'src/app/services/ecdh.service';
 import * as CryptoJS from 'crypto-js';
+import { firstValueFrom } from 'rxjs';
 
-const AES_KEY = 'my-secret-key';
+// ── Fallback key used ONLY if ECDH handshake has not yet completed.
+// This preserves backward compatibility with messages sent before ECDH.
+const FALLBACK_AES_KEY = 'my-secret-key';
 
 function isStegoImageUrl(text: string): boolean {
   return (
@@ -43,9 +47,16 @@ export class HomeComponent implements OnInit {
   messageControl  = new FormControl('');
   chatListControl = new FormControl('');
 
-  isSendingMessage = false;
+  isSendingMessage  = false;
+  isHandshaking     = false;   // true while ECDH key exchange is in progress
+  handshakeError    = '';      // shown to user if ECDH times out
 
   private decodedMessageCache: { [url: string]: string } = {};
+
+  // Tracks which chatIds have a completed ECDH key (chatId → hexKey string)
+  // Hex keys are cached here so we don't re-export the CryptoKey on every
+  // message send/receive.
+  private chatKeyCache: { [chatId: string]: string } = {};
 
   otherUsers$ = combineLatest([this.usersService.allUsers$, this.user$]).pipe(
     map(([users, user]) => users.filter((u) => u.uid !== user?.uid))
@@ -71,15 +82,83 @@ export class HomeComponent implements OnInit {
     private usersService: UsersService,
     private chatsService: ChatsService,
     private stegoService: SteganographyService,
-    private imageUploadService: ImageUploadService
+    private imageUploadService: ImageUploadService,
+    private ecdhService: EcdhService
   ) {}
 
   ngOnInit(): void {
     this.messages$ = this.chatListControl.valueChanges.pipe(
       map((value) => value[0]),
-      switchMap((chatId) => this.chatsService.getChatMessages$(chatId)),
+      switchMap((chatId) => {
+        // Kick off ECDH handshake when a chat is selected
+        if (chatId) this.startEcdhHandshake(chatId);
+        return this.chatsService.getChatMessages$(chatId);
+      }),
       tap(() => this.scrollToBottom())
     );
+  }
+
+  /**
+   * Initiates ECDH handshake for the selected chat.
+   * Looks up the other participant's UID from the chat document,
+   * then calls EcdhService.initHandshake().
+   */
+  private async startEcdhHandshake(chatId: string): Promise<void> {
+    // If key already cached for this chat, nothing to do
+    if (this.chatKeyCache[chatId]) return;
+
+    this.isHandshaking  = true;
+    this.handshakeError = '';
+
+    try {
+      const me    = await firstValueFrom(this.user$);
+      const chats = await firstValueFrom(this.myChats$);
+      const chat  = chats.find(c => c.id === chatId);
+
+      if (!me?.uid || !chat) {
+        this.handshakeError = 'Could not identify chat participants.';
+        return;
+      }
+
+      // Find the other participant (chat.userIds is string[])
+      const theirUid = (chat as any).userIds?.find((uid: string) => uid !== me.uid);
+      if (!theirUid) {
+        this.handshakeError = 'Could not find peer user ID.';
+        return;
+      }
+
+      // Run ECDH — waits up to 30s for peer's public key
+      await this.ecdhService.initHandshake(chatId, me.uid, theirUid);
+
+      // Export as hex for CryptoJS consumption
+      const hexKey = await this.ecdhService.exportKeyAsHex(chatId);
+      this.chatKeyCache[chatId] = hexKey;
+
+      console.log(`[HomeComponent] ECDH complete for chat ${chatId}`);
+
+    } catch (err: any) {
+      console.error('[HomeComponent] ECDH handshake failed:', err);
+      this.handshakeError =
+        'Key exchange timed out — peer may be offline. ' +
+        'Messages will use the fallback key until both parties are online.';
+    } finally {
+      this.isHandshaking = false;
+    }
+  }
+
+  /**
+   * Returns the AES key for a chat:
+   * - ECDH-derived hex key if handshake is complete
+   * - Fallback constant key otherwise
+   */
+  private getAesKey(chatId: string): string | CryptoJS.lib.WordArray {
+    const hexKey = this.chatKeyCache[chatId];
+    if (hexKey) {
+      // Parse hex string into CryptoJS WordArray for use as a raw key
+      return CryptoJS.enc.Hex.parse(hexKey);
+    }
+    // Fallback: pre-shared string key (backward compatible)
+    return FALLBACK_AES_KEY;
   }
 
   async sendMessage(): Promise<void> {
@@ -91,29 +170,28 @@ export class HomeComponent implements OnInit {
     this.messageControl.disable();
 
     try {
-      const encryptedText = CryptoJS.AES.encrypt(message, AES_KEY).toString();
+      // Use ECDH-derived key if available, fallback otherwise
+      const aesKey        = this.getAesKey(selectedChatId);
+      const encryptedText = CryptoJS.AES.encrypt(message, aesKey).toString();
       const timestamp     = Date.now();
 
-      // Get both stego and cover images from the service
       const { stegoBase64, coverBase64 }: StegoResult =
         await this.stegoService.encodeMessageIntoGANImage(encryptedText);
 
-      // Upload stego image (the one sent as message)
       const imageUrl = await this.imageUploadService.uploadBase64Image(
         stegoBase64, selectedChatId
       );
 
-      // Upload cover image silently — only used by the metrics dashboard
       const coverUrl = await this.imageUploadService.uploadCoverImage(
         coverBase64, selectedChatId, timestamp
       );
 
-      // Save both URLs to Firestore — coverUrl is invisible to normal users
       this.chatsService
         .addChatMessage(selectedChatId, imageUrl, coverUrl)
         .subscribe(() => this.scrollToBottom());
 
       this.messageControl.setValue('');
+
     } catch (error) {
       console.error('Error sending stego message:', error);
       alert('Failed to send message. Make sure the GAN backend (app.py) is running.');
@@ -130,10 +208,13 @@ export class HomeComponent implements OnInit {
     if (isStegoImageUrl(storedText)) {
       this.decodedMessageCache[storedText] = '🔓 Decoding...';
 
+      const selectedChatId = this.chatListControl.value?.[0];
+      const aesKey         = selectedChatId ? this.getAesKey(selectedChatId) : FALLBACK_AES_KEY;
+
       this.stegoService
         .decodeMessageFromImageUrl(storedText)
         .then((encryptedText) => {
-          const plainText = CryptoJS.AES.decrypt(encryptedText, AES_KEY)
+          const plainText = CryptoJS.AES.decrypt(encryptedText, aesKey)
             .toString(CryptoJS.enc.Utf8);
           this.decodedMessageCache[storedText] = plainText || '[Decode failed]';
         })
@@ -145,7 +226,9 @@ export class HomeComponent implements OnInit {
     }
 
     try {
-      const plain = CryptoJS.AES.decrypt(storedText, AES_KEY).toString(CryptoJS.enc.Utf8);
+      const selectedChatId = this.chatListControl.value?.[0];
+      const aesKey         = selectedChatId ? this.getAesKey(selectedChatId) : FALLBACK_AES_KEY;
+      const plain          = CryptoJS.AES.decrypt(storedText, aesKey).toString(CryptoJS.enc.Utf8);
       this.decodedMessageCache[storedText] = plain || storedText;
     } catch {
       this.decodedMessageCache[storedText] = storedText;

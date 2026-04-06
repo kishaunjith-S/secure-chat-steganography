@@ -119,14 +119,56 @@
           <span class="metric-hint">Based on embedding density</span>
         </div>
 
-        <div class="metric-item highlight">
-          <span class="metric-label">Chi-Square Steganalysis</span>
+        <!-- Chi-Square -->
+        <div class="metric-item highlight steganalysis-item">
+          <div class="steganalysis-header">
+            <mat-icon class="steg-icon">policy</mat-icon>
+            <span class="metric-label">Chi-Square Steganalysis</span>
+          </div>
           <span class="metric-value" [style.color]="getChiColor(m.chiSquareResult)">
             {{ m.chiSquareResult }}
           </span>
           <span class="metric-hint">χ² = {{ m.chiSquare }} (critical: 3.841)</span>
         </div>
 
+        <!-- SRM Steganalysis — NEW -->
+        <div class="metric-item highlight steganalysis-item srm-item">
+          <div class="steganalysis-header">
+            <mat-icon class="steg-icon">manage_search</mat-icon>
+            <span class="metric-label">SRM Steganalysis</span>
+          </div>
+          <span class="metric-value" [style.color]="getSrmColor(m.srmResult)">
+            {{ m.srmResult }}
+          </span>
+          <span class="metric-hint">
+            Feature dist. = {{ m.srmDistance | number:'1.6-6' }}
+          </span>
+          <span class="metric-hint srm-ref">
+            Fridrich &amp; Kodovsky, IEEE TIFS 2012
+          </span>
+        </div>
+
+      </div>
+
+      <!-- Steganalysis verdict banner -->
+      <div class="verdict-banner"
+           *ngIf="!m.loading && !m.error"
+           [class.safe]="m.chiSquareResult === 'NOT DETECTED' && m.srmResult === 'NOT DETECTED'"
+           [class.warn]="m.chiSquareResult === 'DETECTED' || m.srmResult === 'DETECTED'">
+        <mat-icon>
+          {{ (m.chiSquareResult === 'NOT DETECTED' && m.srmResult === 'NOT DETECTED')
+              ? 'verified_user' : 'warning' }}
+        </mat-icon>
+        <span *ngIf="m.chiSquareResult === 'NOT DETECTED' && m.srmResult === 'NOT DETECTED'">
+          Steganalytically secure — undetected by both Chi-Square and SRM analysis
+        </span>
+        <span *ngIf="m.chiSquareResult === 'DETECTED' || m.srmResult === 'DETECTED'">
+          Warning: detected by
+          {{ m.chiSquareResult === 'DETECTED' && m.srmResult === 'DETECTED'
+              ? 'Chi-Square and SRM analysis'
+              : m.chiSquareResult === 'DETECTED' ? 'Chi-Square analysis' : 'SRM analysis' }}
+          — consider regenerating cover image
+        </span>
       </div>
 
     </div>

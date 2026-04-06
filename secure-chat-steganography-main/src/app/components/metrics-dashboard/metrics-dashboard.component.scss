@@ -210,3 +210,70 @@
   border-radius: 3px;
   transition: width 0.6s ease;
 }
+
+// ── Steganalysis tiles ────────────────────────────────────────────
+.steganalysis-item {
+  .steganalysis-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+
+    .steg-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: #3f51b5;
+    }
+  }
+}
+
+// SRM tile gets a slightly different left-border accent to distinguish it
+.srm-item {
+  border-left-color: #7c4dff !important;
+  background: #f8f5ff !important;
+
+  .steg-icon {
+    color: #7c4dff !important;
+  }
+
+  .srm-ref {
+    font-size: 0.68rem;
+    color: #ce93d8;
+    font-style: italic;
+    margin-top: 2px;
+  }
+}
+
+// ── Verdict banner ────────────────────────────────────────────────
+.verdict-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  &.safe {
+    background: #e8f5e9;
+    color: #2e7d32;
+
+    mat-icon { color: #4caf50; }
+  }
+
+  &.warn {
+    background: #fff3e0;
+    color: #e65100;
+
+    mat-icon { color: #ff9800; }
+  }
+}
