@@ -1,6 +1,6 @@
 export const environment = {
   firebase: {
-    apiKey: "AIzaSyA37ooQjlOpA8ZgJHdM6lNxyZv-1IXHw7c",
+    apiKey: "",
     authDomain: "chat-17acb.firebaseapp.com",
     projectId: "chat-17acb",
     storageBucket: "chat-17acb.firebasestorage.app",
